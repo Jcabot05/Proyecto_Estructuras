@@ -32,7 +32,7 @@ import java.util.Stack;
  *
  * Ejemplo:
  *   "PROMEDIO Tarea 1|Tarea 2"
- *   tokens postfijos: ["Tarea 1", "Tarea 2", "+", "2.0", "/"]
+ *   pasos postfijos: ["Tarea 1", "Tarea 2", "+", "2.0", "/"]
  *
  *   Ejecucion con pila:
  *     push("Tarea 1" -> nota)   pila: [30.0]
@@ -46,7 +46,7 @@ public class Calculo {
 
     private String              nombre;
     private String              expresionOriginal;   // texto del CSV, para mostrar al usuario
-    private String[]            tokensPostfijos;     // expresion convertida, para evaluar con pila
+    private String[]            pasosPostfijos;      // expresion convertida, para evaluar con pila
     private ListaSimple<String> actividadesAsociadas;
 
     // =========================================================
@@ -57,13 +57,13 @@ public class Calculo {
         this.nombre              = nombre;
         this.expresionOriginal   = expresionSimple.trim();
         this.actividadesAsociadas = new ListaSimple<>();
-        this.tokensPostfijos     = convertirAPostfija(this.expresionOriginal);
+        this.pasosPostfijos      = convertirAPostfija(this.expresionOriginal);
 
         // Registrar los nombres de actividades encontrados en la expresion
-        for (String token : tokensPostfijos) {
-            if (!esOperador(token) && !esNumero(token)) {
-                if (!actividadesAsociadas.contiene(token)) {
-                    actividadesAsociadas.add(token);
+        for (String paso : pasosPostfijos) {
+            if (!esOperador(paso) && !esNumero(paso)) {
+                if (!actividadesAsociadas.contiene(paso)) {
+                    actividadesAsociadas.add(paso);
                 }
             }
         }
@@ -81,9 +81,9 @@ public class Calculo {
         String resto = expresion.substring(primer + 1).trim();
 
         switch (clave) {
-            case "PROMEDIO": return postfijaLista(tokenizar(resto), true);
-            case "SUMA":     return postfijaLista(tokenizar(resto), false);
-            case "PONDERADO":return postfijaPonderado(tokenizar(resto));
+            case "PROMEDIO": return postfijaLista(separarPartes(resto), true);
+            case "SUMA":     return postfijaLista(separarPartes(resto), false);
+            case "PONDERADO":return postfijaPonderado(separarPartes(resto));
             default:
                 throw new IllegalArgumentException(
                     "Operacion desconocida: '" + clave
@@ -95,14 +95,14 @@ public class Calculo {
      * Divide la parte de actividades separadas por "|".
      * "Tarea 1|Tarea 2|Examen" -> ["Tarea 1", "Tarea 2", "Examen"]
      */
-    private String[] tokenizar(String texto) {
+    private String[] separarPartes(String texto) {
         String[] partes = texto.split("\\|");
         for (int i = 0; i < partes.length; i++) partes[i] = partes[i].trim();
         return partes;
     }
 
     /**
-     * Genera tokens postfijos para SUMA o PROMEDIO de una lista de actividades.
+    * Genera pasos postfijos para SUMA o PROMEDIO de una lista de actividades.
      *
      * SUMA    [A, B, C]  =>  A B + C +
      * PROMEDIO [A, B, C] =>  A B + C + 3.0 /
@@ -117,23 +117,23 @@ public class Calculo {
 
         // Suma encadenada: n nombres + (n-1) operadores "+"
         int extra = esPromedio ? 2 : 0;  // + literal_n + "/"
-        String[] tokens = new String[nombres.length + (nombres.length - 1) + extra];
+        String[] pasos = new String[nombres.length + (nombres.length - 1) + extra];
         int i = 0;
 
-        tokens[i++] = nombres[0];
+        pasos[i++] = nombres[0];
         for (int k = 1; k < nombres.length; k++) {
-            tokens[i++] = nombres[k];
-            tokens[i++] = "+";
+            pasos[i++] = nombres[k];
+            pasos[i++] = "+";
         }
         if (esPromedio) {
-            tokens[i++] = String.valueOf((double) nombres.length);
-            tokens[i++] = "/";
+            pasos[i++] = String.valueOf((double) nombres.length);
+            pasos[i++] = "/";
         }
-        return tokens;
+        return pasos;
     }
 
     /**
-     * Genera tokens postfijos para PONDERADO.
+    * Genera pasos postfijos para PONDERADO.
      *
      * Entrada (partes alternadas): [act1, peso1, act2, peso2, ...]
      * Salida postfija para dos terminos: act1 peso1 * act2 peso2 * +
@@ -141,11 +141,11 @@ public class Calculo {
     private String[] postfijaPonderado(String[] partes) {
         if (partes.length % 2 != 0)
             throw new IllegalArgumentException(
-                "PONDERADO requiere pares (actividad|peso). Tokens: " + partes.length);
+                "PONDERADO requiere pares (actividad|peso). Partes: " + partes.length);
 
         int pares = partes.length / 2;
-        // Por par: 3 tokens (act, peso, *); entre pares: 1 "+"
-        String[] tokens = new String[pares * 3 + (pares - 1)];
+        // Por par: 3 pasos (act, peso, *); entre pares: 1 "+"
+        String[] pasos = new String[pares * 3 + (pares - 1)];
         int i = 0;
 
         for (int k = 0; k < partes.length; k += 2) {
@@ -154,12 +154,12 @@ public class Calculo {
             if (!esNumero(peso))
                 throw new IllegalArgumentException(
                     "Peso invalido en PONDERADO: '" + peso + "'");
-            tokens[i++] = act;
-            tokens[i++] = peso;
-            tokens[i++] = "*";
-            if (k + 2 < partes.length) tokens[i++] = "+";
+            pasos[i++] = act;
+            pasos[i++] = peso;
+            pasos[i++] = "*";
+            if (k + 2 < partes.length) pasos[i++] = "+";
         }
-        return tokens;
+        return pasos;
     }
 
     // =========================================================
@@ -170,7 +170,7 @@ public class Calculo {
      * Evalua la expresion postfija para el estudiante dado.
      *
      * Algoritmo (evaluacion de expresiones postfijas con pila):
-     *   Para cada token:
+    *   Para cada paso:
      *     numero     -> pila.push(numero)
      *     operador   -> b=pila.pop(), a=pila.pop(), pila.push(a op b)
      *     actividad  -> buscar nota, pila.push(nota)
@@ -183,25 +183,25 @@ public class Calculo {
 
         Stack<Double> pila = new Stack<>();
 
-        for (String token : tokensPostfijos) {
+        for (String paso : pasosPostfijos) {
 
-            if (esNumero(token)) {
-                pila.push(Double.parseDouble(token));
+            if (esNumero(paso)) {
+                pila.push(Double.parseDouble(paso));
 
-            } else if (esOperador(token)) {
+            } else if (esOperador(paso)) {
                 if (pila.size() < 2)
                     throw new IllegalStateException(
                         "Expresion mal formada en '" + nombre + "'");
                 double b = pila.pop();
                 double a = pila.pop();
-                pila.push(operar(a, b, token));
+                pila.push(operar(a, b, paso));
 
             } else {
                 // Nombre de actividad
-                double nota = buscarNota(nodoEst, token);
+                double nota = buscarNota(nodoEst, paso);
                 if (nota < 0)
                     throw new IllegalStateException(
-                        "Falta calificacion de '" + token
+                        "Falta calificacion de '" + paso
                         + "' para " + nodoEst.getData());
                 pila.push(nota);
             }
@@ -283,9 +283,9 @@ public class Calculo {
     /** Retorna la expresion postfija interna (para depuracion o documentacion). */
     public String getExpresionPostfija() {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < tokensPostfijos.length; i++) {
+        for (int i = 0; i < pasosPostfijos.length; i++) {
             if (i > 0) sb.append(" ");
-            sb.append(tokensPostfijos[i]);
+            sb.append(pasosPostfijos[i]);
         }
         return sb.toString();
     }
