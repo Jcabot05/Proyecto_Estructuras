@@ -1,14 +1,5 @@
 /**
- * Genera reportes de calificaciones del curso en consola.
- *
- * El reporte muestra una tabla con todos los estudiantes y sus notas
- * para un subconjunto elegido de actividades y/o calculos.
- *
- * Convencion de celdas:
- *   N/A       -> el estudiante no envio la entrega
- *   S/C       -> entrego pero aun no tiene calificacion
- *   (numero)  -> nota calificada
- *   Incompleto-> el calculo no puede ejecutarse por faltar notas
+ * Reporte simple en consola.
  */
 public class Reporte {
 
@@ -40,23 +31,19 @@ public class Reporte {
             ListaCompuesta<Calculo, String>      listaCalculos,
             ListaSimple<String>                  calculosIncluir) {
 
-        // Ancho de columnas
-        final int COL_EST  = 22;  // columna de nombre de estudiante
-        final int COL_DATO = 14;  // columna de nota o resultado
+        final int COL_EST  = 20;
+        final int COL_DATO = 12;
 
-        // Calcular ancho total dinamicamente
         int cols = actividades.getSize() + calculosIncluir.getSize();
         int anchoTotal = COL_EST + cols * COL_DATO + 2;
 
-        String lineaDoble = "=".repeat(anchoTotal);
         String lineaSimple = "-".repeat(anchoTotal);
 
         StringBuilder sb = new StringBuilder();
 
         // ---------- Titulo ----------
-        sb.append("\n").append(lineaDoble).append("\n");
-        sb.append(centrar("REPORTE DE CALIFICACIONES", anchoTotal)).append("\n");
-        sb.append(lineaDoble).append("\n");
+        sb.append("\nREPORTE DE CALIFICACIONES\n");
+        sb.append(lineaSimple).append("\n");
 
         // ---------- Encabezado de columnas ----------
         sb.append(String.format("%-" + COL_EST + "s", "ESTUDIANTE"));
@@ -67,8 +54,7 @@ public class Reporte {
         }
         ListaSimple<String>.Iterador itC = calculosIncluir.iterador();
         while (itC.hasNext()) {
-            // Los calculos se muestran en mayusculas para distinguirlos
-            String cNombre = truncar(itC.next(), COL_DATO - 2).toUpperCase();
+            String cNombre = truncar(itC.next(), COL_DATO - 2);
             sb.append(String.format("%-" + COL_DATO + "s", cNombre));
         }
         sb.append("\n").append(lineaSimple).append("\n");
@@ -98,11 +84,11 @@ public class Reporte {
         }
 
         // ---------- Pie ----------
-        sb.append(lineaDoble).append("\n");
+        sb.append(lineaSimple).append("\n");
         sb.append("  Actividades : ").append(actividades).append("\n");
         sb.append("  Calculos    : ").append(calculosIncluir).append("\n");
         sb.append("  Leyenda     : N/A=no entregado  S/C=sin calificar\n");
-        sb.append(lineaDoble).append("\n");
+        sb.append(lineaSimple).append("\n");
 
         return sb.toString();
     }
@@ -155,9 +141,5 @@ public class Reporte {
         return texto.length() <= max ? texto : texto.substring(0, max - 2) + "..";
     }
 
-    private static String centrar(String texto, int ancho) {
-        if (texto.length() >= ancho) return texto;
-        int pad = (ancho - texto.length()) / 2;
-        return " ".repeat(pad) + texto;
-    }
+    
 }

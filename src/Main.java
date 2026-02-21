@@ -1,3 +1,6 @@
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Scanner;
@@ -15,8 +18,8 @@ import java.util.Scanner;
  */
 public class Main {
 
-    static final String SEP  = "=".repeat(60);
-    static final String SEP2 = "-".repeat(60);
+    static final String SEP  = "=".repeat(40);
+    static final String SEP2 = "-".repeat(40);
 
     // Estructuras globales del curso
     static ListaCompuesta<Estudiante, Entrega> listaEstudiantes = new ListaCompuesta<>();
@@ -28,26 +31,27 @@ public class Main {
     public static void main(String[] args) {
 
         System.out.println(SEP);
-        System.out.println("   LIBRO DE CALIFICACIONES - ESTRUCTURAS DE DATOS");
+        System.out.println("   Libro de calificaciones");
         System.out.println(SEP);
 
         // --- Carga inicial desde archivos ---
         System.out.println("\nCargando datos...\n");
-        CargadorCSV.cargarNotas("datos/notas.csv", listaEstudiantes, listaActividades);
+        CargadorCSV.cargarNotas(resolverRutaDatos("notas.csv"),
+            listaEstudiantes, listaActividades);
         System.out.println();
-        CargadorCSV.cargarCalculos("datos/calculos.csv", listaCalculos);
+        cargarCalculosPorDefecto();
 
         // --- Menu principal ---
         int opcion = -1;
         while (opcion != 6) {
             System.out.println("\n" + SEP);
-            System.out.println("  MENU PRINCIPAL");
+            System.out.println("  Menu");
             System.out.println(SEP);
-            System.out.println("  1. Ver estructura en memoria");
-            System.out.println("  2. Ejecutar calculos (pila / postfija)");
+            System.out.println("  1. Ver datos");
+            System.out.println("  2. Ejecutar calculos");
             System.out.println("  3. Consultas");
-            System.out.println("  4. Agregar nuevo calculo");
-            System.out.println("  5. Reporte personalizado");
+            System.out.println("  4. Nuevo calculo");
+            System.out.println("  5. Reporte");
             System.out.println("  6. Salir");
             System.out.print("  Opcion: ");
 
@@ -62,7 +66,7 @@ public class Main {
                     System.out.println("\n  Hasta luego.");
                     break;
                 default:
-                    System.out.println("  [Opcion invalida, intente de nuevo]");
+                    System.out.println("  [Opcion invalida]");
             }
         }
         sc.close();
@@ -74,16 +78,16 @@ public class Main {
 
     private static void menuVerEstructura() {
         System.out.println("\n" + SEP);
-        System.out.println("  ESTRUCTURA EN MEMORIA");
+        System.out.println("  Datos en memoria");
         System.out.println(SEP);
 
-        System.out.println("\n-- ESTUDIANTES con sus entregas --");
+        System.out.println("\n-- Estudiantes --");
         System.out.println(listaEstudiantes);
 
-        System.out.println("\n-- ACTIVIDADES con sus entregas --");
+        System.out.println("\n-- Actividades --");
         System.out.println(listaActividades);
 
-        System.out.println("\n-- CALCULOS cargados --");
+        System.out.println("\n-- Calculos --");
         if (listaCalculos.isEmpty()) {
             System.out.println("  (sin calculos)");
         } else {
@@ -99,12 +103,48 @@ public class Main {
     }
 
     // ==============================================================
+    // RESOLUCION DE RUTAS DE DATOS
+    // ==============================================================
+
+    private static String resolverRutaDatos(String nombreArchivo) {
+        Path directa = Paths.get("datos", nombreArchivo);
+        if (Files.exists(directa)) return directa.toString();
+
+        Path anidada = Paths.get("proyecto", "datos", nombreArchivo);
+        if (Files.exists(anidada)) return anidada.toString();
+
+        return directa.toString();
+    }
+
+    private static void cargarCalculosPorDefecto() {
+        agregarCalculo("Promedio Tareas", "PROMEDIO Tarea 1|Tarea 2");
+        agregarCalculo("Total Examenes", "SUMA Examen|Taller 1");
+        agregarCalculo("Nota Final",
+                "PONDERADO Tarea 1|0.2|Tarea 2|0.2|Examen|0.4|Proyecto|0.2");
+    }
+
+    private static void agregarCalculo(String nombre, String expresion) {
+        try {
+            Calculo calculo = new Calculo(nombre, expresion);
+            NodoCompuesto<Calculo, String> nodo = new NodoCompuesto<>(calculo);
+
+            ListaSimple<String>.Iterador it = calculo.getActividadesAsociadas().iterador();
+            while (it.hasNext()) {
+                listaCalculos.addElementInSecondaryList(nodo, it.next());
+            }
+            listaCalculos.add(nodo);
+        } catch (IllegalArgumentException e) {
+            System.out.println("  [Error] Calculo fijo invalido: " + e.getMessage());
+        }
+    }
+
+    // ==============================================================
     // OPCION 2 - EJECUTAR CALCULOS
     // ==============================================================
 
     private static void menuCalculos() {
         System.out.println("\n" + SEP);
-        System.out.println("  CALCULOS AGREGADOS (evaluados con Pila - notacion postfija)");
+        System.out.println("  Calculos (pila / postfija)");
         System.out.println(SEP);
 
         if (listaCalculos.isEmpty()) {
@@ -116,7 +156,7 @@ public class Main {
              nCalc != null; nCalc = nCalc.getNext()) {
 
             Calculo calculo = nCalc.getData();
-            System.out.println("\n  " + calculo.getNombre()
+                System.out.println("\n  " + calculo.getNombre()
                     + "  [postfija: " + calculo.getExpresionPostfija() + "]");
             System.out.println("  " + SEP2);
 
@@ -141,21 +181,23 @@ public class Main {
         int op = -1;
         while (op != 0) {
             System.out.println("\n" + SEP);
-            System.out.println("  CONSULTAS");
+            System.out.println("  Consultas");
             System.out.println(SEP);
             System.out.println("  --- Actividades ---");
-            System.out.println("  1. A1 - Actividades cuya fecha limite ya fenecio");
-            System.out.println("  2. A2 - Actividades con entregas incompletas");
-            System.out.println("  3. A3 - Actividades con algun nota menor a un valor");
+            System.out.println("  1. A1 - Vencidas");
+            System.out.println("  2. A2 - Incompletas");
+            System.out.println("  3. A3 - Nota menor a... ");
             System.out.println("  --- Entregas ---");
-            System.out.println("  4. B1 - Entregas tardias sin calificar");
+            System.out.println("  4. B1 - Tardias sin calificar");
             System.out.println("  --- Estudiantes ---");
-            System.out.println("  5. C1 - Estudiantes con porcentaje de entregas mayor a...");
-            System.out.println("  6. C2 - Estudiantes sin entregas en actividades vencidas");
-            System.out.println("  7. C3 - Estudiantes con la misma nota en dos actividades");
+            System.out.println("  5. C1 - Porcentaje mayor a...");
+            System.out.println("  6. C2 - Sin entregas vencidas");
+            System.out.println("  7. C3 - Misma nota en dos actividades");
             System.out.println("  --- Calculos ---");
-            System.out.println("  8. D1 - Calculos que no pueden ejecutarse");
-            System.out.println("  9. D2 - Calculos que involucran una actividad");
+            System.out.println("  8. D1 - No ejecutables");
+            System.out.println("  9. D2 - Involucran actividad");
+            System.out.println("  --- Extra ---");
+            System.out.println("  10. Filtro por fecha y nota");
             System.out.println("  0. Volver al menu principal");
             System.out.print("  Opcion: ");
 
@@ -170,6 +212,7 @@ public class Main {
                 case 7: consultaC3(); break;
                 case 8: consultaD1(); break;
                 case 9: consultaD2(); break;
+                case 10: consultaExtraComparadores(); break;
                 case 0: break;
                 default: System.out.println("  [Opcion invalida]");
             }
@@ -262,13 +305,32 @@ public class Main {
         }
     }
 
+    private static void consultaExtraComparadores() {
+        System.out.print("  Fecha de envio antes de (yyyy-MM-dd): ");
+        LocalDate fecha = leerFecha();
+        if (fecha == null) return;
+        System.out.print("  Nota menor a: ");
+        int nota = leerEntero();
+
+        Actividad aBuscar = new Actividad("", fecha, fecha);
+        ListaCompuesta<Actividad, Entrega> porFecha =
+                listaActividades.buscarTodosMayoresEnListaPrincipal(
+                        new compararActividadxFecha(), aBuscar);
+        ListaCompuesta<Actividad, Entrega> porNota =
+                porFecha.buscarTodosMenoresEnListaSecundaria(
+                        new compararEntregasxNotas(), new Entrega(nota));
+
+        titulo("Extra - Actividades por fecha y nota");
+        imprimirActividades(porNota);
+    }
+
     // ==============================================================
     // OPCION 4 - AGREGAR NUEVO CALCULO
     // ==============================================================
 
     private static void menuAgregarCalculo() {
         System.out.println("\n" + SEP);
-        System.out.println("  AGREGAR NUEVO CALCULO");
+        System.out.println("  Nuevo calculo");
         System.out.println(SEP);
         System.out.println("  Formatos de expresion:");
         System.out.println("    PROMEDIO   Tarea 1|Tarea 2|Examen");
@@ -318,7 +380,7 @@ public class Main {
 
     private static void menuReporte() {
         System.out.println("\n" + SEP);
-        System.out.println("  REPORTE PERSONALIZADO");
+        System.out.println("  Reporte");
         System.out.println(SEP);
 
         // Mostrar actividades disponibles

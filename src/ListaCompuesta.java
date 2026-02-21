@@ -13,6 +13,10 @@ import java.util.Comparator;
  */
 public class ListaCompuesta<E, F> {
 
+    public interface Criterio<T> {
+        boolean cumple(T dato);
+    }
+
     private NodoCompuesto<E, F> header;
     private NodoCompuesto<E, F> tail;
     private int size;
@@ -94,6 +98,42 @@ public class ListaCompuesta<E, F> {
         return null;
     }
 
+    public ListaCompuesta<E, F> buscarTodosMayoresEnListaPrincipal(Comparator<E> c, E data) {
+        ListaCompuesta<E, F> resultado = new ListaCompuesta<>();
+        for (NodoCompuesto<E, F> p = header; p != null; p = p.getNext()) {
+            if (c.compare(p.getData(), data) < 0) {
+                NodoCompuesto<E, F> copia = new NodoCompuesto<>(p.getData());
+                copia.setReferenciaLista(p.getReferenciaLista());
+                resultado.add(copia);
+            }
+        }
+        return resultado;
+    }
+
+    public ListaCompuesta<E, F> buscarTodosMenoresEnListaSecundaria(Comparator<F> c, F data) {
+        ListaCompuesta<E, F> resultado = new ListaCompuesta<>();
+        for (NodoCompuesto<E, F> p = header; p != null; p = p.getNext()) {
+            ListaSimple<F> sublista = p.getReferenciaLista();
+            if (sublista == null || sublista.isEmpty()) continue;
+
+            boolean encontrado = false;
+            ListaSimple<F>.Iterador it = sublista.iterador();
+            while (it.hasNext()) {
+                if (c.compare(it.next(), data) < 0) {
+                    encontrado = true;
+                    break;
+                }
+            }
+
+            if (encontrado) {
+                NodoCompuesto<E, F> copia = new NodoCompuesto<>(p.getData());
+                copia.setReferenciaLista(sublista);
+                resultado.add(copia);
+            }
+        }
+        return resultado;
+    }
+
     /**
      * Retorna la union de las listas secundarias de dos nodos, sin repetidos.
      * Util para combinar entregas de dos actividades distintas.
@@ -120,6 +160,42 @@ public class ListaCompuesta<E, F> {
 
         if (lista1 == null || lista2 == null) return new ListaSimple<>();
         return lista1.interseccion(lista2);
+    }
+
+    public ListaCompuesta<E, F> filtrarPrincipales(Criterio<E> criterio) {
+        ListaCompuesta<E, F> resultado = new ListaCompuesta<>();
+        for (NodoCompuesto<E, F> nodo = header; nodo != null; nodo = nodo.getNext()) {
+            if (criterio.cumple(nodo.getData())) {
+                NodoCompuesto<E, F> copia = new NodoCompuesto<>(nodo.getData());
+                copia.setReferenciaLista(nodo.getReferenciaLista());
+                resultado.add(copia);
+            }
+        }
+        return resultado;
+    }
+
+    public ListaCompuesta<E, F> filtrarSecundarias(Criterio<F> criterio) {
+        ListaCompuesta<E, F> resultado = new ListaCompuesta<>();
+        for (NodoCompuesto<E, F> nodo = header; nodo != null; nodo = nodo.getNext()) {
+            ListaSimple<F> sublista = nodo.getReferenciaLista();
+            if (sublista == null || sublista.isEmpty()) continue;
+
+            boolean cumple = false;
+            ListaSimple<F>.Iterador it = sublista.iterador();
+            while (it.hasNext()) {
+                if (criterio.cumple(it.next())) {
+                    cumple = true;
+                    break;
+                }
+            }
+
+            if (cumple) {
+                NodoCompuesto<E, F> copia = new NodoCompuesto<>(nodo.getData());
+                copia.setReferenciaLista(sublista);
+                resultado.add(copia);
+            }
+        }
+        return resultado;
     }
 
     /**

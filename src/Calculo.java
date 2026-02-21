@@ -1,46 +1,8 @@
 import java.util.Stack;
 
 /**
- * Representa un calculo agregado del curso.
- *
- * =================================================================
- * NOTACION SIMPLE (lo que escribe el usuario en el CSV):
- * =================================================================
- *
- *   PROMEDIO  act1|act2|act3
- *     -> promedio aritmetico de las actividades listadas
- *     Ejemplo:  "PROMEDIO Tarea 1|Tarea 2"
- *
- *   SUMA  act1|act2|act3
- *     -> suma todas las notas listadas
- *     Ejemplo:  "SUMA Examen|Taller 1"
- *
- *   PONDERADO  act1|peso1|act2|peso2
- *     -> suma ponderada: nota1*peso1 + nota2*peso2 + ...
- *     Los pesos son numeros decimales (0.4 = 40%)
- *     Ejemplo:  "PONDERADO Tarea 1|0.3|Examen|0.7"
- *
- * Los nombres de actividades se separan con "|" para permitir
- * espacios dentro del nombre (ej. "Tarea 1").
- *
- * =================================================================
- * MECANISMO INTERNO (obligatorio por el enunciado):
- * =================================================================
- *
- * La notacion simple se convierte automaticamente a notacion POSTFIJA
- * al construir el objeto. La evaluacion usa java.util.Stack.
- *
- * Ejemplo:
- *   "PROMEDIO Tarea 1|Tarea 2"
- *   pasos postfijos: ["Tarea 1", "Tarea 2", "+", "2.0", "/"]
- *
- *   Ejecucion con pila:
- *     push("Tarea 1" -> nota)   pila: [30.0]
- *     push("Tarea 2" -> nota)   pila: [30.0, 85.0]
- *     "+"  -> pop 85, pop 30, push 115   pila: [115.0]
- *     push(2.0)                 pila: [115.0, 2.0]
- *     "/"  -> pop 2, pop 115, push 57.5  pila: [57.5]
- *     resultado = 57.5
+ * Calculo agregado del curso (suma, promedio o ponderado).
+ * La expresion simple se convierte a postfija y se evalua con pila.
  */
 public class Calculo {
 
@@ -148,7 +110,18 @@ public class Calculo {
         String[] pasos = new String[pares * 3 + (pares - 1)];
         int i = 0;
 
-        for (int k = 0; k < partes.length; k += 2) {
+        // Termino inicial: act1 peso1 *
+        String actInicial = partes[0];
+        String pesoInicial = partes[1];
+        if (!esNumero(pesoInicial))
+            throw new IllegalArgumentException(
+                "Peso invalido en PONDERADO: '" + pesoInicial + "'");
+        pasos[i++] = actInicial;
+        pasos[i++] = pesoInicial;
+        pasos[i++] = "*";
+
+        // Siguientes terminos: actN pesoN * +
+        for (int k = 2; k < partes.length; k += 2) {
             String act  = partes[k];
             String peso = partes[k + 1];
             if (!esNumero(peso))
@@ -157,7 +130,7 @@ public class Calculo {
             pasos[i++] = act;
             pasos[i++] = peso;
             pasos[i++] = "*";
-            if (k + 2 < partes.length) pasos[i++] = "+";
+            pasos[i++] = "+";
         }
         return pasos;
     }

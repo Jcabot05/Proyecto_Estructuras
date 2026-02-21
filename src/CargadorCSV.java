@@ -7,18 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Carga los datos del sistema desde archivos CSV.
- *
- * Formato esperado de notas.csv (separado por comas):
- *   Estudiante,Nota,Actividad,FechaLimite,FechaEntrega
- *   Pepito Abad,30,Tarea 1,2025-01-15,2025-01-14
- *   Pepito Abad,,Proyecto,2025-01-30,          <- nota vacia = sin calificar
- *   Pepito Abad,,Tarea 2,2026-02-28,           <- sin nota y sin fechaEntrega = no envio
- *
- * Formato esperado de calculos.csv (separado por |):
- *   NombreCalculo|ExpressionPostfija
- *   Promedio Tareas|Tarea 1 Tarea 2 + 2 /
- *   Total Examenes|Examen 1 Examen 2 +
+ * Carga datos desde CSV.
  */
 public class CargadorCSV {
 
@@ -56,7 +45,7 @@ public class CargadorCSV {
                 String[] datos = linea.split(",", -1); // -1 preserva celdas vacias
 
                 if (datos.length < 4) {
-                    System.out.println("  [AVISO] Fila " + fila + " ignorada: pocas columnas");
+                    System.out.println("  [Aviso] Fila " + fila + " ignorada: pocas columnas");
                     errores++;
                     continue;
                 }
@@ -72,7 +61,7 @@ public class CargadorCSV {
                 try {
                     fechaLimite = LocalDate.parse(fechaLimiteStr, FMT);
                 } catch (Exception e) {
-                    System.out.println("  [AVISO] Fila " + fila
+                        System.out.println("  [Aviso] Fila " + fila
                             + ": fecha limite invalida '" + fechaLimiteStr + "'");
                     fechaLimite = LocalDate.now().plusDays(30);
                     errores++;
@@ -84,8 +73,8 @@ public class CargadorCSV {
                     try {
                         fechaEntrega = LocalDate.parse(fechaEntregaStr, FMT);
                     } catch (Exception e) {
-                        System.out.println("  [AVISO] Fila " + fila
-                                + ": fecha entrega invalida '" + fechaEntregaStr + "'");
+                        System.out.println("  [Aviso] Fila " + fila
+                            + ": fecha entrega invalida '" + fechaEntregaStr + "'");
                     }
                 }
 
@@ -96,8 +85,8 @@ public class CargadorCSV {
                     try {
                         nota = Integer.parseInt(notaStr);
                     } catch (NumberFormatException e) {
-                        System.out.println("  [AVISO] Fila " + fila
-                                + ": nota invalida '" + notaStr + "' -> se marca sin calificar");
+                        System.out.println("  [Aviso] Fila " + fila
+                            + ": nota invalida '" + notaStr + "' -> sin calificar");
                         tieneNota = false;
                         errores++;
                     }
@@ -155,14 +144,14 @@ public class CargadorCSV {
             }
 
             System.out.println("=".repeat(55));
-            System.out.println("CARGA DE NOTAS COMPLETADA");
-            System.out.println("  Estudiantes : " + listaEstudiantes.getSize());
-            System.out.println("  Actividades : " + listaActividades.getSize());
-            System.out.println("  Filas leidas: " + fila + "  (errores: " + errores + ")");
+            System.out.println("CARGA DE NOTAS");
+            System.out.println("  Estudiantes: " + listaEstudiantes.getSize());
+            System.out.println("  Actividades: " + listaActividades.getSize());
+            System.out.println("  Filas: " + fila + "  (errores: " + errores + ")");
             System.out.println("=".repeat(55));
 
         } catch (IOException e) {
-            System.err.println("[ERROR] No se pudo leer el archivo: " + e.getMessage());
+            System.err.println("[Error] No se pudo leer el archivo: " + e.getMessage());
         }
     }
 
@@ -171,24 +160,7 @@ public class CargadorCSV {
     // =========================================================
 
     /**
-     * Carga calculos desde un archivo con formato:
-     *
-     *   Nombre|Expresion
-     *   Promedio Tareas|PROMEDIO Tarea 1|Tarea 2
-     *   Nota Final|PONDERADO Tarea 1|0.2|Examen|0.8
-     *
-     * La primera columna (hasta el primer "|") es el nombre del calculo.
-     * El resto de la linea (desde el segundo token en adelante) es la expresion,
-     * donde los nombres de actividades tambien se separan con "|".
-     *
-     * Formato de expresion soportado:
-     *   PROMEDIO  act1|act2|...
-     *   SUMA      act1|act2|...
-     *   PONDERADO act1|peso1|act2|peso2|...
-     *
-     * Los calculos se almacenan en una ListaCompuesta&lt;Calculo, String&gt;.
-     * La lista secundaria de cada nodo contiene los nombres de las actividades
-     * involucradas (util para la consulta D2).
+     * Carga calculos desde CSV.
      */
     public static void cargarCalculos(String rutaArchivo,
                                       ListaCompuesta<Calculo, String> listaCalculos) {
@@ -209,7 +181,7 @@ public class CargadorCSV {
                 // Ejemplo de linea: "Promedio Tareas;;PROMEDIO Tarea 1|Tarea 2"
                 int primerSep = linea.indexOf(";;");
                 if (primerSep < 0) {
-                    System.out.println("  [AVISO] Fila " + fila + " de calculos ignorada (sin ';;')");
+                    System.out.println("  [Aviso] Fila " + fila + " de calculos ignorada (sin ';;')");
                     continue;
                 }
 
@@ -228,11 +200,11 @@ public class CargadorCSV {
                     }
 
                     listaCalculos.add(nodo);
-                    System.out.println("  + Calculo cargado: " + calculo.getNombre()
+                        System.out.println("  + Calculo: " + calculo.getNombre()
                             + " [postfija: " + calculo.getExpresionPostfija() + "]");
 
                 } catch (IllegalArgumentException e) {
-                    System.out.println("  [ERROR] Calculo en fila " + fila
+                        System.out.println("  [Error] Calculo en fila " + fila
                             + " invalido: " + e.getMessage());
                 }
             }
@@ -240,7 +212,7 @@ public class CargadorCSV {
             System.out.println("Calculos cargados: " + listaCalculos.getSize());
 
         } catch (IOException e) {
-            System.err.println("[ERROR] No se pudo leer calculos: " + e.getMessage());
+            System.err.println("[Error] No se pudo leer calculos: " + e.getMessage());
         }
     }
 }

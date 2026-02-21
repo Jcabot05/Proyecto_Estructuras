@@ -1,6 +1,4 @@
-/**
- * Representa un estudiante del curso.
- */
+// Estudiante simple
 public class Estudiante {
 
     private String nombre;
@@ -10,8 +8,6 @@ public class Estudiante {
         this.nombre = nombre;
         this.apellido = apellido;
     }
-
-    // ---------- Getters / Setters ----------
 
     public String getNombre()   { return nombre; }
     public String getApellido() { return apellido; }
