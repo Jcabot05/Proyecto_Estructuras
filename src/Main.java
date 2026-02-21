@@ -39,7 +39,7 @@ public class Main {
         CargadorCSV.cargarNotas(resolverRutaDatos("notas.csv"),
             listaEstudiantes, listaActividades);
         System.out.println();
-        cargarCalculosPorDefecto();
+        CargadorCSV.cargarCalculos(resolverRutaDatos("calculos.csv"), listaCalculos);
 
         // --- Menu principal ---
         int opcion = -1;
@@ -116,27 +116,7 @@ public class Main {
         return directa.toString();
     }
 
-    private static void cargarCalculosPorDefecto() {
-        agregarCalculo("Promedio Tareas", "PROMEDIO Tarea 1|Tarea 2");
-        agregarCalculo("Total Examenes", "SUMA Examen|Taller 1");
-        agregarCalculo("Nota Final",
-                "PONDERADO Tarea 1|0.2|Tarea 2|0.2|Examen|0.4|Proyecto|0.2");
-    }
-
-    private static void agregarCalculo(String nombre, String expresion) {
-        try {
-            Calculo calculo = new Calculo(nombre, expresion);
-            NodoCompuesto<Calculo, String> nodo = new NodoCompuesto<>(calculo);
-
-            ListaSimple<String>.Iterador it = calculo.getActividadesAsociadas().iterador();
-            while (it.hasNext()) {
-                listaCalculos.addElementInSecondaryList(nodo, it.next());
-            }
-            listaCalculos.add(nodo);
-        } catch (IllegalArgumentException e) {
-            System.out.println("  [Error] Calculo fijo invalido: " + e.getMessage());
-        }
-    }
+    
 
     // ==============================================================
     // OPCION 2 - EJECUTAR CALCULOS
